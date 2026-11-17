@@ -1,0 +1,53 @@
+# Publica no NuGet quando uma tag vX.Y.Z é criada neste repositório (pelo sdks/mirror.sh do monorepo).
+# Sem API key guardada: o NuGet confia neste workflow (trusted publishing), no environment nuget, e troca o token
+# OIDC do GitHub por uma chave que vale uma hora. NUGET_USER é o usuário do nuget.org dono da política (não é segredo).
+name: publish
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+      - name: A tag tem de ser a versão do .csproj
+        run: |
+          v=$(grep -oP '(?<=<Version>)[^<]+' Sharpfy.Nextapi/Sharpfy.Nextapi.csproj)
+          test "v$v" = "$GITHUB_REF_NAME"
+      - run: dotnet test Sharpfy.Nextapi.Tests -c Release -p:TestTargetFramework=net8.0
+      - run: dotnet test Sharpfy.Nextapi.Tests -c Release -p:TestTargetFramework=net10.0
+      - run: dotnet pack Sharpfy.Nextapi -c Release -o dist -p:ContinuousIntegrationBuild=true
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v6
+        with:
+          name: dist
+          path: dist/
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+      - uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - run: dotnet nuget push "dist/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json
