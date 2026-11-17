@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- TestTargetFramework (sdks/test.sh) restringe a um framework, para testar cada um na imagem oficial dele. -->
+    <TargetFrameworks Condition="'$(TestTargetFramework)' == ''">net8.0;net10.0</TargetFrameworks>
+    <TargetFramework Condition="'$(TestTargetFramework)' != ''">$(TestTargetFramework)</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsAotCompatible>false</IsAotCompatible>
+
+    <PackageId>Sharpfy.Nextapi</PackageId>
+    <Version>0.2.0</Version>
+    <Authors>Sharpfy</Authors>
+    <Company>Sharpfy</Company>
+    <Description>SDK oficial da NextAPI para .NET: CNPJ (inclusive alfanumérico), CEP, sócios e mercado.</Description>
+    <PackageTags>sharpfy;nextapi;cnpj;cep;receita-federal;simples-nacional;sdk</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://nextapi.com.br</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/sharpfytecnologia/nextapi-sdk-dotnet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;1573</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Sharpfy.Nextapi.Tests" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- Única dependência: a integração com IHttpClientFactory (AddNextApi). O cliente em si só usa a BCL. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+  </ItemGroup>
+
+</Project>
