@@ -77,6 +77,7 @@ public sealed class NextApiClient : IDisposable
         Municipios = new MunicipiosResource(this);
         Mercado = new MercadoResource(this);
         Creditos = new CreditosResource(this);
+        Monitoramentos = new MonitoramentosResource(this);
     }
 
     public CnpjResource Cnpj { get; }
@@ -88,6 +89,7 @@ public sealed class NextApiClient : IDisposable
     public MunicipiosResource Municipios { get; }
     public MercadoResource Mercado { get; }
     public CreditosResource Creditos { get; }
+    public MonitoramentosResource Monitoramentos { get; }
 
     /// <summary>Sandbox para chaves <c>nxa_test_</c>. O endereço é o mesmo: a API decide pela chave.</summary>
     public NextApiEnvironment Environment { get; }
@@ -194,9 +196,9 @@ public sealed class NextApiClient : IDisposable
         {
             NextApiErrorCodes.TokenNotProvided or NextApiErrorCodes.TokenInvalid or NextApiErrorCodes.SandboxDisabled
                 => new NextApiAuthenticationException(message, status, code, text, requestId),
-            NextApiErrorCodes.MissingCredits or NextApiErrorCodes.LiveSearchMissingCredits
+            NextApiErrorCodes.MissingCredits or NextApiErrorCodes.LiveSearchMissingCredits or NextApiErrorCodes.MonitoringInsufficientCredits
                 => new NextApiInsufficientCreditsException(message, status, code, text, requestId),
-            NextApiErrorCodes.RequiresPaidPlan or NextApiErrorCodes.LiveSearchNotAllowed
+            NextApiErrorCodes.RequiresPaidPlan or NextApiErrorCodes.LiveSearchNotAllowed or NextApiErrorCodes.MonitoringFreePlanLimit
                 => new NextApiPaidPlanRequiredException(message, status, code, text, requestId),
             _ => status switch
             {

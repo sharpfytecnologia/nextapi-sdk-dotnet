@@ -37,6 +37,8 @@ public class ContractTests
     private static int? I(JsonElement o, string n) => o.TryGetProperty(n, out var v) ? v.GetInt32() : null;
     private static double D(JsonElement o, string n) => o.GetProperty(n).GetDouble();
     private static bool? B(JsonElement o, string n) => o.TryGetProperty(n, out var v) ? v.GetBoolean() : null;
+    private static IEnumerable<string>? Strs(JsonElement o, string n) =>
+        o.TryGetProperty(n, out var v) && v.ValueKind == JsonValueKind.Array ? v.EnumerateArray().Select(x => x.GetString()!).ToList() : null;
     private static DateOnly? Date(JsonElement o, string n) => S(o, n) is { } s ? DateOnly.Parse(s) : null;
 
     /// <summary>Traduz a chamada canônica (camelCase, argumentos em JSON) para a API do SDK .NET.</summary>
@@ -80,6 +82,10 @@ public class ContractTests
             "mercado.obterMunicipio" => api.Mercado.ObterMunicipioAsync(a[0].GetInt32()),
             "mercado.obterIndicador" => api.Mercado.ObterIndicadorAsync(Str(0), S(o, "inicio"), S(o, "fim")),
             "creditos.consultar" => api.Creditos.ConsultarAsync(),
+            "monitoramentos.incluir" => api.Monitoramentos.IncluirAsync(List(0), Strs(o, "eventos"), S(o, "cadencia"), Strs(o, "canais")),
+            "monitoramentos.listar" => api.Monitoramentos.ListarAsync(I(o, "page"), I(o, "pageSize")),
+            "monitoramentos.remover" => api.Monitoramentos.RemoverAsync(Str(0)),
+            "monitoramentos.listarEventos" => api.Monitoramentos.ListarEventosAsync(S(o, "cursor"), S(o, "tipo"), S(o, "desde"), I(o, "limite")),
             _ => throw new InvalidOperationException($"SDK sem {call}"),
         };
     }
@@ -92,7 +98,9 @@ public class ContractTests
     public async Task Caso(string id, string raw)
     {
         var c = JsonDocument.Parse(raw).RootElement;
-        var fake = new Fake(() => Json(c.GetProperty("response").GetRawText()));
+        var fake = new Fake(() => I(c, "status") == 204
+            ? new HttpResponseMessage(HttpStatusCode.NoContent)
+            : Json(c.GetProperty("response").GetRawText()));
         await Invoke(Client(fake), S(c, "call") ?? id, c.GetProperty("args"));
 
         var (request, body) = Assert.Single(fake.Seen);

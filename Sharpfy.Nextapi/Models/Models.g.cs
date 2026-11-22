@@ -427,6 +427,48 @@ public sealed record MercadoMunicipioResponse
     [JsonPropertyName("avisos")] public IReadOnlyList<string>? Avisos { get; init; }
 }
 
+public sealed record MonitoramentoEventoResponse
+{
+    [JsonPropertyName("id")] public string? Id { get; init; }
+    [JsonPropertyName("tipo")] public string? Tipo { get; init; }
+    [JsonPropertyName("cnpj")] public string? Cnpj { get; init; }
+    [JsonPropertyName("fonte")] public string? Fonte { get; init; }
+    [JsonPropertyName("referencia")] public DateTimeOffset? Referencia { get; init; }
+    [JsonPropertyName("observadoEm")] public DateTimeOffset? ObservadoEm { get; init; }
+    [JsonPropertyName("versao")] public int? Versao { get; init; }
+    [JsonPropertyName("dados")] public JsonElement? Dados { get; init; }
+}
+
+public sealed record MonitoramentoEventosResponse
+{
+    [JsonPropertyName("items")] public IReadOnlyList<MonitoramentoEventoResponse>? Items { get; init; }
+    [JsonPropertyName("proximoCursor")] public string? ProximoCursor { get; init; }
+    [JsonPropertyName("temMais")] public bool? TemMais { get; init; }
+}
+
+public sealed record MonitoramentoInscricaoResponse
+{
+    [JsonPropertyName("inscritos")] public IReadOnlyList<string>? Inscritos { get; init; }
+    [JsonPropertyName("atualizados")] public IReadOnlyList<string>? Atualizados { get; init; }
+    [JsonPropertyName("invalidos")] public IReadOnlyList<string>? Invalidos { get; init; }
+    [JsonPropertyName("naoEncontrados")] public IReadOnlyList<string>? NaoEncontrados { get; init; }
+    [JsonPropertyName("totalNaCarteira")] public int? TotalNaCarteira { get; init; }
+    [JsonPropertyName("limiteDaCarteira")] public int? LimiteDaCarteira { get; init; }
+    [JsonPropertyName("creditosPorCnpj")] public int? CreditosPorCnpj { get; init; }
+    [JsonPropertyName("creditosDebitados")] public int? CreditosDebitados { get; init; }
+    [JsonPropertyName("creditosEstimados")] public int? CreditosEstimados { get; init; }
+}
+
+public sealed record MonitoramentoItemResponse
+{
+    [JsonPropertyName("cnpj")] public string? Cnpj { get; init; }
+    [JsonPropertyName("eventos")] public IReadOnlyList<string>? Eventos { get; init; }
+    [JsonPropertyName("cadencia")] public string? Cadencia { get; init; }
+    [JsonPropertyName("canais")] public IReadOnlyList<string>? Canais { get; init; }
+    [JsonPropertyName("monitoradoDesde")] public DateTimeOffset? MonitoradoDesde { get; init; }
+    [JsonPropertyName("linhaDeBase")] public DateTimeOffset? LinhaDeBase { get; init; }
+}
+
 public sealed record MunicipioDetalhadoResponse
 {
     [JsonPropertyName("id")] public int? Id { get; init; }

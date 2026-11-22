@@ -163,6 +163,29 @@ Console.WriteLine($"restam {creditos.TotalRemainingCredits} créditos");
 
 Todo método aceita `CancellationToken` como último parâmetro.
 
+### Monitoramento de empresas
+
+Cada CNPJ na carteira custa 2 créditos por mês, debitados na inclusão e a cada renovação da janela de créditos. Sem saldo para todos, ou acima de 10 CNPJs no plano gratuito, a inclusão é recusada e nada entra. A chave de teste (`nxa_test_`) não debita e informa quanto custaria. A inclusão nunca é repetida sozinha.
+
+```csharp
+// Inclui na carteira (até 100 por chamada) e recebe o resultado CNPJ a CNPJ.
+var inclusao = await nextapi.Monitoramentos.IncluirAsync(["11222333000181", "45997418000153"], canais: ["email"]);
+Console.WriteLine($"{inclusao.CreditosDebitados} créditos debitados");
+var carteira = await nextapi.Monitoramentos.ListarAsync(page: 1, pageSize: 100);
+await nextapi.Monitoramentos.RemoverAsync("45997418000153");
+
+// Polling: guarde o cursor e continue de onde parou. Entrega pelo menos uma vez: deduplique pelo Id.
+string? cursor = null;
+while (true)
+{
+    var pagina = await nextapi.Monitoramentos.ListarEventosAsync(cursor: cursor);
+    foreach (var evento in pagina.Items ?? [])
+        Console.WriteLine($"{evento.Tipo} {evento.Cnpj} {evento.Dados}");
+    cursor = pagina.ProximoCursor ?? cursor;
+    if (pagina.TemMais != true) break;
+}
+```
+
 ## Erros
 
 Toda falha vira uma exceção do SDK; a classe diz o que fazer, e o código detalha.
@@ -170,8 +193,8 @@ Toda falha vira uma exceção do SDK; a classe diz o que fazer, e o código deta
 | Classe | Quando | Status / código | O que fazer |
 |---|---|---|---|
 | `NextApiAuthenticationException` | Chave ausente, inválida ou revogada | 401 / 1002, 400 / 1001 | Confira a chave e o ambiente |
-| `NextApiInsufficientCreditsException` | Créditos do período acabaram | 405 / 1004, 1006 | Aguarde a renovação ou compre créditos avulsos |
-| `NextApiPaidPlanRequiredException` | Recurso exige plano pago | 405 / 1012, 1005 | Mude de plano |
+| `NextApiInsufficientCreditsException` | Créditos do período acabaram, ou o saldo não cobre o mês dos CNPJs monitorados | 405 / 1004, 1006; 402 / 1024 | Aguarde a renovação ou compre créditos avulsos |
+| `NextApiPaidPlanRequiredException` | Recurso exige plano pago, ou passou de 10 CNPJs monitorados no plano gratuito | 405 / 1012, 1005; 402 / 1025 | Mude de plano |
 | `NextApiNotFoundException` | CNPJ, CEP ou município não existe | 404 / 1000 | Trate como resultado, não como falha |
 | `NextApiValidationException` | Entrada recusada pela API ou pelo SDK | 400 / 1007, ou status 0 | Corrija a entrada; não repita |
 | `NextApiRateLimitException` | Limite de requisições por minuto | 429 / 1003 | Já repetido sozinho; diminua o ritmo |

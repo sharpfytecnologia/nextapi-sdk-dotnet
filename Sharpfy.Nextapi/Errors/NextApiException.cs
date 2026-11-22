@@ -15,6 +15,10 @@ public static class NextApiErrorCodes
     public const int ExternalProviderFailure = 1014;
     public const int SandboxDailyLimit = 1015;
     public const int SandboxDisabled = 1016;
+    /// <summary>Monitoramento: o saldo não cobre o mês dos CNPJs novos (402). Nada foi incluído.</summary>
+    public const int MonitoringInsufficientCredits = 1024;
+    /// <summary>Monitoramento: o plano gratuito acompanha até 10 CNPJs (402). Nada foi incluído.</summary>
+    public const int MonitoringFreePlanLimit = 1025;
 }
 
 /// <summary>
@@ -53,11 +57,11 @@ public class NextApiException : Exception
 public sealed class NextApiAuthenticationException(string message, int status = 0, int? code = null, string? body = null, string? requestId = null)
     : NextApiException(message, status, code, body, requestId);
 
-/// <summary>Sem créditos para a consulta (1004, 1006).</summary>
+/// <summary>Sem créditos para a consulta (1004, 1006) ou para o mês dos CNPJs monitorados (1024).</summary>
 public sealed class NextApiInsufficientCreditsException(string message, int status, int? code, string? body, string? requestId)
     : NextApiException(message, status, code, body, requestId);
 
-/// <summary>O recurso exige plano pago ou créditos avulsos (1012, 1005).</summary>
+/// <summary>O recurso exige plano pago ou créditos avulsos (1012, 1005), ou passou do limite do plano gratuito (1025).</summary>
 public sealed class NextApiPaidPlanRequiredException(string message, int status, int? code, string? body, string? requestId)
     : NextApiException(message, status, code, body, requestId);
 

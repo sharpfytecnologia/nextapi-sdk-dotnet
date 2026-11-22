@@ -11,7 +11,7 @@
     <IsAotCompatible>false</IsAotCompatible>
 
     <PackageId>Sharpfy.Nextapi</PackageId>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <Authors>Sharpfy</Authors>
     <Company>Sharpfy</Company>
     <Description>SDK oficial da NextAPI para .NET: CNPJ (inclusive alfanumérico), CEP, sócios e mercado.</Description>

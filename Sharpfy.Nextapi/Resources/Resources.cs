@@ -7,6 +7,7 @@ public abstract class ResourceBase(NextApiClient client)
 {
     protected Task<T> GetAsync<T>(string path, CancellationToken ct) => client.SendAsync<T>(HttpMethod.Get, path, null, ct);
     protected Task<T> PostAsync<T>(string path, object body, CancellationToken ct) => client.SendAsync<T>(HttpMethod.Post, path, body, ct);
+    protected Task DeleteAsync(string path, CancellationToken ct) => client.SendAsync<object?>(HttpMethod.Delete, path, null, ct);
 }
 
 /// <summary>Consultas por CNPJ, com ou sem pontuação, numérico ou alfanumérico.</summary>
@@ -181,4 +182,48 @@ public sealed class CreditosResource(NextApiClient client) : ResourceBase(client
     /// <summary>Saldo de créditos do plano e avulsos, e os limites da chave. Não consome crédito.</summary>
     public Task<WorkspaceCreditsResponse> ConsultarAsync(CancellationToken cancellationToken = default) =>
         GetAsync<WorkspaceCreditsResponse>("/v1/credits", cancellationToken);
+}
+
+/// <summary>
+/// Monitoramento de empresas: a carteira de CNPJs acompanhados e os eventos de mudança deles. Cada CNPJ custa créditos por
+/// mês, debitados na inclusão; a chave de teste (<c>nxa_test_</c>) não debita.
+/// </summary>
+public sealed class MonitoramentosResource(NextApiClient client) : ResourceBase(client)
+{
+    /// <summary>
+    /// Inclui até 100 CNPJs na carteira; o resultado vem CNPJ a CNPJ. Sem saldo para todos, lança
+    /// <see cref="NextApiInsufficientCreditsException"/> e não inclui nenhum. Nunca é repetida sozinha (debita créditos).
+    /// </summary>
+    /// <param name="eventos">Tipos de evento (<c>cadastro.alterado</c>, <c>socios.alterado</c>). Nulo: todos.</param>
+    /// <param name="cadencia"><c>mensal</c> (padrão).</param>
+    /// <param name="canais">Avisos além do polling: <c>email</c> e/ou <c>webhook</c>. Nulo: nenhum.</param>
+    public Task<MonitoramentoInscricaoResponse> IncluirAsync(IEnumerable<string> cnpjs, IEnumerable<string>? eventos = null,
+        string? cadencia = null, IEnumerable<string>? canais = null, CancellationToken cancellationToken = default)
+    {
+        var body = new Dictionary<string, object> { ["cnpjs"] = Batch(cnpjs) };
+        if (eventos is not null) body["eventos"] = eventos.ToList();
+        if (cadencia is not null) body["cadencia"] = cadencia;
+        if (canais is not null) body["canais"] = canais.ToList();
+        return PostAsync<MonitoramentoInscricaoResponse>("/v1/monitoramentos", body, cancellationToken);
+    }
+
+    /// <summary>CNPJs ativos na carteira, em ordem de CNPJ, paginados.</summary>
+    public Task<Page<MonitoramentoItemResponse>> ListarAsync(int? page = null, int? pageSize = null, CancellationToken cancellationToken = default) =>
+        GetAsync<Page<MonitoramentoItemResponse>>("/v1/monitoramentos" + Query(("page", page), ("pageSize", pageSize)), cancellationToken);
+
+    /// <summary>Tira o CNPJ da carteira. Os eventos já observados continuam no polling.</summary>
+    public Task RemoverAsync(string cnpj, CancellationToken cancellationToken = default) =>
+        DeleteAsync($"/v1/monitoramentos/{NormalizeCnpj(cnpj)}", cancellationToken);
+
+    /// <summary>
+    /// Eventos da carteira, em ordem. Guarde <c>ProximoCursor</c> e envie em <paramref name="cursor"/> na chamada seguinte.
+    /// Entrega pelo menos uma vez: deduplique pelo <c>Id</c>.
+    /// </summary>
+    /// <param name="tipo">Tipos de evento separados por vírgula.</param>
+    /// <param name="desde">Só eventos observados a partir deste instante (ISO 8601, UTC).</param>
+    /// <param name="limite">Eventos por página (padrão e máximo 100).</param>
+    public Task<MonitoramentoEventosResponse> ListarEventosAsync(string? cursor = null, string? tipo = null, string? desde = null,
+        int? limite = null, CancellationToken cancellationToken = default) =>
+        GetAsync<MonitoramentoEventosResponse>("/v1/monitoramentos/eventos"
+            + Query(("cursor", cursor), ("tipo", tipo), ("desde", desde), ("limite", limite)), cancellationToken);
 }
